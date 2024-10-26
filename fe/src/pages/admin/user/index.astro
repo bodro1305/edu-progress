@@ -1,0 +1,298 @@
+---
+import type { IBreadcrumbs } from "@/component/ui/breadcrumb.astro";
+import Button from "@/component/ui/button.astro";
+import InputWithButton from "@/component/ui/inputWithButton.astro";
+import AdminLayout from "@/layouts/admin-layout.astro";
+import { Icon } from "astro-icon/components";
+
+const breadcrumbs: IBreadcrumbs[] = [
+  {
+    href: "/admin/user",
+    label: "User",
+  },
+];
+---
+
+<AdminLayout title="Admin" breadcrumbs={breadcrumbs} pageTitle="User">
+  <div class="w-full h-full flex flex-col">
+    <div class="h-full flex flex-col p-4 bg-white rounded-lg shadow-sm xl:p-8">
+      <div class="h-12 grid grid-cols-[1fr,auto,auto] gap-2 items-center">
+        <h2
+          class="text-lg sr font-medium text-gray-700 capitalize sm:text-xl md:text-2xl"
+        >
+          <InputWithButton id="user-search-input" withIcon="tabler:search" />
+        </h2>
+
+        <div>
+          <Button
+            @click="window.location.href = '/admin/user/new'"
+            colors="green"
+            class="flex items-center gap-2 text-nowrap"
+          >
+            <Icon name={"tabler:plus"} /> Add User
+          </Button>
+        </div>
+
+        <div>
+          <Button
+            colors="red"
+            disabled
+            class="flex items-center gap-2 text-nowrap"
+            id="delete-users-button"
+          >
+            <Icon name={"tabler:trash"} /> Delete<b>(0)</b>
+          </Button>
+        </div>
+      </div>
+
+      <div
+        class="flex flex-col mt-8 h-[calc(100%-8rem)] lg:mt-0 lg:h-[calc(100%-5rem)]"
+      >
+        <div class="h-full">
+          <div class="h-full overflow-scroll min-w-full align-middle">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="sticky top-0 bg-white w-full">
+                <tr class="">
+                  <th scope="col" class="px-6 py-3 text-left rtl:text-right">
+                    <input
+                      class="text-indigo-500 rounded-md focus:ring-indigo-500"
+                      type="checkbox"
+                      id="select-all-checkbox"
+                    />
+                  </th>
+
+                  <th
+                    scope="col"
+                    class="px-6 py-3 pr-16 text-sm font-medium tracking-wider text-left text-gray-700 uppercase rtl:text-right whitespace-nowrap"
+                  >
+                    Name
+                  </th>
+                  <th
+                    scope="col"
+                    class="px-6 py-3 text-sm font-medium tracking-wider text-left text-gray-700 uppercase rtl:text-right whitespace-nowrap"
+                  ></th>
+
+                  <th
+                    scope="col"
+                    class="px-6 py-3 text-sm font-medium tracking-wider text-left text-gray-700 uppercase rtl:text-right whitespace-nowrap"
+                  >
+                    Action
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody
+                class="bg-white divide-y divide-gray-200 overflow-auto"
+                id="users-list"
+              >
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="h-8">
+        <div
+          class="h-full flex flex-col lg:justify-between lg:flex-row items-center"
+        >
+          <div class="">
+            <a
+              href="#"
+              class="inline-flex items-center justify-center px-4 py-1 mx-2 text-gray-700 transition-colors duration-200 transform bg-gray-100 rounded-lg"
+            >
+              1
+            </a>
+
+            <a
+              href="#"
+              class="inline-flex items-center justify-center px-4 py-1 mx-2 text-gray-700 transition-colors duration-200 transform rounded-lg hover:bg-gray-100"
+            >
+              2
+            </a>
+
+            <a
+              href="#"
+              class="inline-flex items-center justify-center px-4 py-1 mx-2 text-gray-700 transition-colors duration-200 transform rounded-lg hover:bg-gray-100"
+            >
+              3
+            </a>
+          </div>
+
+          <div class="text-gray-500">
+            <span class="font-medium text-gray-700">1 - 25</span> of 77 records
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</AdminLayout>
+
+<script>
+  import {
+    deleteUserApi,
+    deleteUsersApi,
+    getUsersApi,
+  } from "@/assets/js/fetching";
+  import { hideLoading, showLoading } from "@/assets/js/loading";
+
+  const mainElm = document.querySelector("main");
+  const toastContainerElm = document.querySelector("#toast-container");
+  const selectAllUsersCheckbox = mainElm.querySelector(
+    "#select-all-checkbox"
+  ) as HTMLInputElement;
+  const deleteUsersButton = mainElm.querySelector(
+    "#delete-users-button"
+  ) as HTMLButtonElement;
+  const displayCountDelete = deleteUsersButton.querySelector("b");
+  const usersListElm = mainElm.querySelector("#users-list");
+
+  const UserCheckboxes = () =>
+    mainElm.querySelectorAll("input[name=user-checkbox]");
+  const DeleteUserButtons = () =>
+    mainElm.querySelectorAll("button[data-delete-btn]");
+
+  let checkedUsersCount = 0;
+  selectAllUsersCheckbox.checked = false;
+
+  const updateCheckedCount = () => {
+    displayCountDelete.textContent = `(${checkedUsersCount})`;
+    deleteUsersButton.disabled = checkedUsersCount === 0;
+    selectAllUsersCheckbox.checked =
+      checkedUsersCount === UserCheckboxes().length;
+    selectAllUsersCheckbox.indeterminate =
+      checkedUsersCount > 0 && checkedUsersCount < UserCheckboxes().length;
+  };
+
+  const alertInfo = (type, text) => {
+    toastContainerElm.innerHTML = `
+  <div class="${type == "error" ? "error" : "success"}">
+      <span>${text}</span>
+    </div>
+  `;
+
+    setTimeout(() => {
+      toastContainerElm.innerHTML = "";
+    }, 2000);
+  };
+
+  const fetchUsers = async () => {
+    try {
+      const { data } = await getUsersApi();
+      return data;
+    } catch (error) {
+      return null;
+    }
+  };
+
+  const renderUserTableBody = (users) => {
+    usersListElm.innerHTML = users
+      .map(
+        (user) => `
+    <tr>
+      <td class="px-6 py-4">
+        <input type="checkbox" name="user-checkbox" value="${user.public_id}"
+          class="text-indigo-500 rounded-md focus:ring-indigo-500" />
+      </td>
+      <td class="px-6 py-4 text-gray-500">
+        <div class="flex items-center">
+          <img src="/images/blank-profile-picture.png" class="w-12 h-12 rounded-full object-cover" alt="" />
+          <div class="mx-3">
+            <h2 class="font-medium text-gray-700">${user.username}</h2>
+            <p class="text-gray-500">${user.full_name}</p>
+          </div>
+        </div>
+      </td>
+      <td class="px-6 py-4"></td>
+      <td class="px-6 py-4">
+        <div class="flex items-center">
+          <a href="/admin/user/${user.public_id}" class="mx-4 text-gray-500 focus:outline-none hover:text-indigo-500">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+          </a>
+          <button data-delete-btn data-public-id="${user.public_id}" class="text-gray-500 focus:outline-none hover:text-indigo-500">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
+        </div>
+      </td>
+    </tr>
+  `
+      )
+      .join("");
+
+    selectAllUsersCheckbox.addEventListener("change", (e) => {
+      const isChecked = (e.target as any).checked;
+      UserCheckboxes().forEach((checkbox: HTMLInputElement) => {
+        checkbox.checked = isChecked;
+      });
+      checkedUsersCount = isChecked ? UserCheckboxes().length : 0;
+      updateCheckedCount();
+    });
+
+    UserCheckboxes().forEach((checkbox: HTMLInputElement) => {
+      checkbox.addEventListener("change", (e) => {
+        if ((e.target as any).checked) {
+          checkedUsersCount++;
+        } else {
+          checkedUsersCount--;
+        }
+        updateCheckedCount();
+      });
+    });
+
+    deleteUsersButton.addEventListener("click", async () => {
+      showLoading();
+      const data = mainElm.querySelectorAll(
+        "input[name=user-checkbox]:checked"
+      );
+      const publicIds = Array.from(data).map(
+        (checkbox: HTMLInputElement) => checkbox.value
+      );
+      try {
+        await deleteUsersApi(publicIds);
+        alertInfo("success", `${checkedUsersCount} Berhasil Di Hapus.`);
+        const user = await fetchUsers();
+        renderUserTableBody(user.users);
+        checkedUsersCount = 0;
+        updateCheckedCount();
+        selectAllUsersCheckbox.checked = false;
+      } catch (error) {
+      } finally {
+        hideLoading();
+      }
+    });
+
+    DeleteUserButtons().forEach((btn) => {
+      btn.addEventListener("click", async (e) => {
+        showLoading();
+        const publicId = btn.getAttribute("data-public-id");
+        try {
+          await deleteUserApi(publicId);
+          alertInfo("success", `User Berhasil Di Hapus.`);
+          const user = await fetchUsers();
+          renderUserTableBody(user.users);
+        } catch (error) {
+        } finally {
+          hideLoading();
+        }
+      });
+    });
+  };
+
+  const main = async () => {
+    selectAllUsersCheckbox.checked = false;
+    showLoading();
+
+    try {
+      const user = await fetchUsers();
+      renderUserTableBody(user.users);
+    } catch (error) {
+      // handle error
+    } finally {
+      hideLoading();
+    }
+  };
+
+  main();
+</script>

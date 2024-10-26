@@ -1,0 +1,47 @@
+---
+import UserLayout from "@/layouts/user-layout.astro";
+import { Icon } from "astro-icon/components";
+
+const { user } = Astro.locals;
+---
+
+<UserLayout title="User" breadcrumbs={[]} pageTitle="Dashboard">
+  <section class="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
+    <div
+      class="flex items-center justify-between px-6 py-3 bg-white rounded-lg shadow-sm"
+    >
+      <div>
+        <p class="font-medium text-gray-500">Mengisi Journal</p>
+
+        <div class="flex items-end">
+          <h2 class="mt-1 text-2xl font-medium text-gray-800">
+            {user.journals_filled.length}
+          </h2>
+          <!-- <span class="mx-2 text-indigo-500"> +55% </span> -->
+        </div>
+      </div>
+
+      <div class="p-2 text-white bg-green-500 rounded-lg">
+        <Icon name="tabler:notebook" class="size-6" />
+      </div>
+    </div>
+    <div
+      class="flex items-center justify-between px-6 py-3 bg-white rounded-lg shadow-sm"
+    >
+      <div>
+        <p class="font-medium text-gray-500">Journal Tersubtitusi</p>
+
+        <div class="flex items-end">
+          <h2 class="mt-1 text-2xl font-medium text-gray-800">
+            {user.journals_substituted.length}
+          </h2>
+          <!-- <span class="mx-2 text-indigo-500"> +55% </span> -->
+        </div>
+      </div>
+
+      <div class="p-2 text-white bg-green-500 rounded-lg">
+        <Icon name="tabler:notebook" class="size-6" />
+      </div>
+    </div>
+  </section>
+</UserLayout>

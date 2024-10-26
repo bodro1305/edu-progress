@@ -1,0 +1,65 @@
+---
+import JournalCardEmpty from "@/component/journal/journal-card-empty.astro";
+import JournalCard from "@/component/journal/journal-card.astro";
+import ScrollArea from "@/component/scroll-area.astro";
+import type { IBreadcrumbs } from "@/component/ui/breadcrumb.astro";
+import { LESSON_LIST } from "@/constant/lesson-list";
+import AdminLayout from "@/layouts/admin-layout.astro";
+import api from "@/lib/api.lib";
+import { formatDate } from "@/utils";
+
+const breadcrumbs: IBreadcrumbs[] = [
+  {
+    href: "/admin/journal",
+    label: "Journal",
+  },
+];
+
+const { accessToken } = Astro.locals;
+
+const getJournals = async () => {
+  try {
+    const { data } = await api(
+      {
+        url: `/journal`,
+      },
+      { accessToken: accessToken },
+    );
+    const journals = data.data.journals;
+
+    return journals.map((journal) => ({
+      ...journal,
+      created_at: formatDate(journal.createdAt),
+      lesson: LESSON_LIST.find((lesson) => lesson.value === journal.lesson.name)
+        ? {
+            ...journal.lesson,
+            label: LESSON_LIST.find(
+              (lesson) => lesson.value === journal.lesson.name,
+            ).label,
+          }
+        : null,
+    }));
+  } catch (error) {
+    console.log(error.response?.data);
+    return null;
+  }
+};
+
+const journals = await getJournals();
+---
+
+<AdminLayout title="Journals" pageTitle="Journals" breadcrumbs={breadcrumbs}>
+  <div class="h-full w-full">
+    <ScrollArea withScrollbar={true}>
+      <div class="grid gap-4">
+        {
+          journals.length === 0 ? (
+            <JournalCardEmpty />
+          ) : (
+            journals.map((journal) => <JournalCard data={journal} />)
+          )
+        }
+      </div>
+    </ScrollArea>
+  </div>
+</AdminLayout>

@@ -1,0 +1,34 @@
+---
+import type { HTMLAttributes } from "astro/types";
+
+interface IOption extends HTMLAttributes<"option"> {
+  text: string;
+}
+
+interface Props {
+  id: string;
+  withLabel?: string;
+  options: IOption[];
+}
+
+const { id, options, withLabel } = Astro.props;
+---
+
+<div>
+  <label
+    for={id}
+    class="text-sm lg:text-lg mb-2 font-bold"
+    class:list={[{ "sr-only": !withLabel }]}
+  >
+    {withLabel}
+  </label>
+
+  <select
+    name={id}
+    id={id}
+    class="mt-1.5 w-full rounded-lg border-gray-300 text-gray-700 sm:text-sm"
+  >
+    <option value="">Please select</option>
+    {options.map((option) => <option {...option}>{option.text}</option>)}
+  </select>
+</div>

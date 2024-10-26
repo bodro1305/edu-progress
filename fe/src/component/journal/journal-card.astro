@@ -1,0 +1,54 @@
+---
+interface Props {
+  data: any;
+}
+
+const { data } = Astro.props;
+---
+
+<div
+  class="grid grid-cols-1 px-3 py-4 bg-white rounded-lg shadow-md dark:bg-gray-800 w-full"
+>
+  <div class="flex items-center justify-between">
+    <span class="text-sm font-normal text-gray-600 dark:text-gray-400">
+      {data.created_at}
+    </span>
+  </div>
+
+  <div class="mt-2">
+    <a
+      href="#"
+      class="text-xl font-bold text-gray-700 dark:text-white hover:text-gray-600 dark:hover:text-gray-200 hover:underline"
+      tabindex="0"
+      role="link"
+    >
+      {data.lesson.label}
+    </a>
+    <p
+      class="mt-2 text-gray-600 dark:text-gray-300 w-full text-ellipsis overflow-hidden"
+    >
+      {data.summary}
+    </p>
+  </div>
+
+  <div class="flex items-center justify-between mt-4">
+    <a
+      href={`/${Astro.locals.user.role === "admin" ? "admin" : "regular"}/journal/${data.public_id}`}
+      class="text-blue-600 flex items-center dark:text-blue-400 hover:underline"
+      tabindex="0"
+      role="link"
+    >
+      Check -->
+    </a>
+
+    <div class="flex items-center">
+      <a
+        class="font-bold text-gray-700 cursor-pointer dark:text-gray-200"
+        tabindex="0"
+        role="link"
+      >
+        {data.filled_by_user.full_name}
+      </a>
+    </div>
+  </div>
+</div>

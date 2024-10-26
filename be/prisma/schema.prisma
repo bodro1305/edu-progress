@@ -1,0 +1,127 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["omitApi"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum LessonEnum {
+  B_INGGRIS
+  MATEMATIKA
+  IPAS
+  B_INDONESIA
+  PPKN
+  SENI_BUDAYA
+  SEJARAH
+  PKK
+  OLAHRAGA
+  TARIKH
+  ALQURAN_DAN_HADITS
+  AQIDAH_AKHLAK
+  AIJ
+  ASJ
+}
+
+enum SubstituteDayEnum {
+  senin
+  selasa
+  rabu
+  kamis
+  jumat
+  sabtu
+  minggu
+}
+
+enum UserRole {
+  admin
+  regular
+}
+
+enum ClassEnum {
+  // TKJ
+  TKJ_10_A // 10 TJKT 1
+  TKJ_10_B // 10 TJKT 2
+  TKJ_11_A // 11 TJKT 1
+  TKJ_11_B // 11 TJKT 2
+  TKJ_12_A // 12 TJKT 1
+  TKJ_12_B // 12 TJKT 2
+
+  // AKL
+  AKL_10_A // 10 AKL
+  AKL_11_A // 11 AKL
+  AKL_12_A // 12 AKL
+}
+
+enum TeachingTimeEnum {
+  TIME_1 // 1 (07.00 - 07.40)
+  TIME_2 // 2 (07.40 - 08.20)
+  TIME_3 // 3 (08.20 - 09.00)
+  TIME_4 // 4 (09.00 - 09.40)
+  TIME_5 // 5 (09.55 - 10.35)
+  TIME_6 // 6 (10.35 - 11.15)
+  TIME_7 // 7 (11.15 - 11.50)
+  TIME_8 // 8 (12.35 - 01.10)
+  TIME_9 // 9 (01.10 - 01.45)
+  TIME_10 // 10 (01.45 - 02.20)
+  TIME_11 // 11 (02.20 - 02.55)
+}
+
+model User {
+  id            Int      @id @default(autoincrement())
+  username      String   @unique
+  full_name     String
+  password      String
+  public_id     String   @unique @default(uuid())
+  role          UserRole @default(regular)
+  is_substitute Boolean
+
+  lessons    Lesson[]     @relation("UserLessons")
+  substitute Substitute[] @relation("UserSubstitute")
+
+  journals_filled      Journal[] @relation("FilledByUser")
+  journals_substituted Journal[] @relation("SubstitutedBy")
+}
+
+model Substitute {
+  id             Int               @id @default(autoincrement())
+  user_public_id String
+  day            SubstituteDayEnum
+  User           User?             @relation("UserSubstitute", fields: [user_public_id], references: [public_id], onDelete: Cascade)
+}
+
+model Lesson {
+  id               Int        @id @default(autoincrement())
+  user_public_id   String
+  name             LessonEnum
+  lesson_public_id String     @unique @default(uuid())
+
+  User     User      @relation("UserLessons", fields: [user_public_id], references: [public_id], onDelete: Cascade)
+  journals Journal[] @relation("LessonJournals")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Journal {
+  id            Int                @id @default(autoincrement())
+  class_subject ClassEnum
+  teaching_time TeachingTimeEnum[]
+  summary       String
+  public_id     String             @unique @default(uuid())
+  is_subsitute  Boolean
+
+  filled_by_user_public_id String
+  filled_by_user           User   @relation("FilledByUser", fields: [filled_by_user_public_id], references: [public_id])
+
+  substitute_user_public_id String?
+  substitute_user           User?   @relation("SubstitutedBy", fields: [substitute_user_public_id], references: [public_id])
+
+  lesson_public_id String
+  lesson           Lesson @relation("LessonJournals", fields: [lesson_public_id], references: [lesson_public_id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

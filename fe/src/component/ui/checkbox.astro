@@ -1,0 +1,23 @@
+---
+import type { HTMLAttributes } from "astro/types";
+
+interface Props extends HTMLAttributes<"input"> {
+  text: string;
+}
+
+const { text, id, class: classTag, ...props } = Astro.props;
+const defaultClass =
+  "shrink-0 mt-0.5 border-gray-200 rounded text-green-600 focus:ring-green-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-800 dark:border-neutral-700 dark:checked:bg-green-500 dark:checked:border-green-500 dark:focus:ring-offset-gray-800";
+---
+
+<div class="flex">
+  <input
+    type="checkbox"
+    class={`${defaultClass} ${classTag}`}
+    id={id}
+    {...props}
+  />
+  <label for={id} class="text-sm text-gray-500 ms-3 dark:text-neutral-400"
+    >{text}</label
+  >
+</div>

@@ -1,0 +1,62 @@
+---
+import AdminLayout from "@/layouts/admin-layout.astro";
+import api from "@/lib/api.lib";
+import { Icon } from "astro-icon/components";
+
+const getCounts = async () => {
+  try {
+    const { data } = await api(
+      {
+        url: "/helper/all-count",
+      },
+      { accessToken: Astro.locals.accessToken },
+    );
+
+    return data.data;
+  } catch (error) {
+    return null;
+  }
+};
+const counts = await getCounts();
+---
+
+<AdminLayout title="Admin" breadcrumbs={[]} pageTitle="Home">
+  <section class="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
+    <div
+      class="flex items-center justify-between px-6 py-3 bg-white rounded-lg shadow-sm"
+    >
+      <div>
+        <p class="font-medium text-gray-500">Users</p>
+
+        <div class="flex items-end">
+          <h2 class="mt-1 text-2xl font-medium text-gray-800">
+            {counts.user}
+          </h2>
+          <!-- <span class="mx-2 text-indigo-500"> +55% </span> -->
+        </div>
+      </div>
+
+      <div class="p-2 text-white bg-green-500 rounded-lg">
+        <Icon name="tabler:users" class="size-6" />
+      </div>
+    </div>
+    <div
+      class="flex items-center justify-between px-6 py-3 bg-white rounded-lg shadow-sm"
+    >
+      <div>
+        <p class="font-medium text-gray-500">Journal</p>
+
+        <div class="flex items-end">
+          <h2 class="mt-1 text-2xl font-medium text-gray-800">
+            {counts.journal}
+          </h2>
+          <!-- <span class="mx-2 text-indigo-500"> +55% </span> -->
+        </div>
+      </div>
+
+      <div class="p-2 text-white bg-green-500 rounded-lg">
+        <Icon name="tabler:notebook" class="size-6" />
+      </div>
+    </div>
+  </section>
+</AdminLayout>

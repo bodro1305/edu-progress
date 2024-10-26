@@ -1,0 +1,26 @@
+---
+import type { HTMLAttributes } from "astro/types";
+
+interface Props extends HTMLAttributes<"input"> {
+  withLabel?: string;
+  id: string;
+  requiredMark?: boolean;
+}
+const { withLabel, requiredMark, id, ...props } = Astro.props;
+---
+
+<div>
+  <label
+    for={id}
+    class={withLabel ? "text-sm lg:text-lg mb-2 font-bold" : "sr-only"}
+  >
+    {requiredMark && <span class="text-red-600">*</span>}
+    {withLabel}
+  </label>
+
+  <input
+    id={id}
+    class="mt-1 w-full rounded-md border-gray-200 shadow-sm sm:text-sm"
+    {...props}
+  />
+</div>

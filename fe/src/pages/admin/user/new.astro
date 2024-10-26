@@ -1,0 +1,220 @@
+---
+import ScrollArea from "@/component/scroll-area.astro";
+import type { IBreadcrumbs } from "@/component/ui/breadcrumb.astro";
+import Button from "@/component/ui/button.astro";
+import Checkbox from "@/component/ui/checkbox.astro";
+import Input from "@/component/ui/input.astro";
+import Select from "@/component/ui/select.astro";
+import { LESSON_LIST } from "@/constant/lesson-list";
+import AdminLayout from "@/layouts/admin-layout.astro";
+import { DAY_LIST } from "@/constant/day-list";
+
+const breadcrumbs: IBreadcrumbs[] = [
+  {
+    href: "/admin/user",
+    label: "User",
+  },
+  {
+    href: "/admin/user/new",
+    label: "New",
+  },
+];
+---
+
+<AdminLayout
+  title="New User"
+  breadcrumbs={breadcrumbs}
+  pageTitle="Create New user"
+>
+  <!-- <div
+    class="toast toast-center toast-top lg:toast-end lg:toast-bottom"
+    id="toast-container"
+  >
+  </div> -->
+  <div class="h-full rounded w-full bg-white">
+    <ScrollArea withScrollbar={false}>
+      <div class="p-4">
+        <form class="">
+          <section class="grid lg:grid-cols-[1fr,1fr] gap-2">
+            <div class="mb-2">
+              <Input
+                requiredMark={true}
+                required
+                name="username"
+                id="username"
+                withLabel="Username"
+              />
+            </div>
+
+            <div class="mb-2">
+              <Input
+                requiredMark={true}
+                required
+                name="full_name"
+                id="full_name"
+                withLabel="Name"
+              />
+            </div>
+
+            <div class="mb-2 w-full lg:col-span-2">
+              <Input
+                requiredMark={true}
+                required
+                name="password"
+                id="password"
+                type="password"
+                withLabel="Password"
+              />
+            </div>
+          </section>
+
+          <section class="">
+            <label for="full_name" class="text-sm lg:text-lg mb-2 font-bold">
+              <span class="text-red-600">*</span> Mata Pelajaran
+            </label>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
+              {
+                LESSON_LIST.map((list) => (
+                  <Checkbox
+                    name="lesson"
+                    text={list.label}
+                    id={list.id}
+                    value={list.value.toString().trim()}
+                  />
+                ))
+              }
+            </div>
+
+            <div class="mt-4">
+              <h1>Extra</h1>
+              <Checkbox
+                id="is-substitute"
+                name="is-substitute"
+                text="Apakah ini adalah Guru Piket?"
+              />
+              <Select id="substitute-day" options={DAY_LIST} />
+            </div>
+          </section>
+
+          <section class="mt-2">
+            <Button colors="green" type="submit"> Submit </Button>
+          </section>
+        </form>
+      </div>
+    </ScrollArea>
+  </div>
+</AdminLayout>
+
+<!-- <script type="module" src="/src/script/user-new.script.ts"></script> -->
+<script>
+  console.log("Santos");
+  import api from "@/assets/js/api";
+
+  const alertInfo = (type, text) => {
+    const rootToastElm = document.querySelector("#toast-container");
+    rootToastElm.innerHTML = `
+  <div class="${type == "error" ? "error" : "success"}">
+      <span>${text}</span>
+    </div>
+  `;
+
+    setTimeout(() => {
+      rootToastElm.innerHTML = "";
+    }, 2000);
+  };
+
+  const selectElement = (selector, parent = document) =>
+    parent.querySelector(selector);
+  const selectAllElements = (selector, parent = document) =>
+    Array.from(parent.querySelectorAll(selector));
+
+  const mainElm = selectElement("main");
+
+  const createUserForm = selectElement("form");
+  const usernameInput = selectElement("input[name=username]", createUserForm);
+  const fullNameInput = selectElement("input[name=full_name]", createUserForm);
+  const passwordInput = selectElement("input[name=password]", createUserForm);
+  const lessonInputs = selectAllElements("input[name=lesson]", createUserForm);
+  const isSubstituteCheckbox = selectElement("#is-substitute", createUserForm);
+  const substituteDayField = selectElement("#substitute-day", createUserForm);
+  const submitBtn = selectElement("button[type=submit]", createUserForm);
+
+  const validationRules = {
+    username: (value) => value.length >= 3,
+    full_name: (value) => value.length >= 3,
+    password: (value) => value.length >= 3,
+    lessons: (inputs) => inputs.some((input) => input.checked),
+    substitute_day: (value, isSubstituteChecked) =>
+      !isSubstituteChecked || value.trim() !== "",
+  };
+
+  const validateForm = () => {
+    const isFormValid =
+      validationRules.username(usernameInput.value) &&
+      validationRules.password(passwordInput.value) &&
+      validationRules.full_name(fullNameInput.value) &&
+      validationRules.lessons(lessonInputs) &&
+      validationRules.substitute_day(
+        substituteDayField.value,
+        isSubstituteCheckbox.checked,
+      );
+
+    submitBtn.disabled = !isFormValid;
+  };
+
+  const toggleSubstituteDayField = () => {
+    substituteDayField.classList.toggle(
+      "hidden",
+      !isSubstituteCheckbox.checked,
+    );
+    validateForm();
+  };
+
+  usernameInput.addEventListener("input", validateForm);
+  passwordInput.addEventListener("input", validateForm);
+  fullNameInput.addEventListener("input", validateForm);
+  lessonInputs.forEach((input) =>
+    input.addEventListener("change", validateForm),
+  );
+  substituteDayField.addEventListener("input", validateForm);
+  isSubstituteCheckbox.addEventListener("change", toggleSubstituteDayField);
+
+  toggleSubstituteDayField();
+
+  createUserForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    mainElm.classList.add("is-loading");
+    const formDataObject = new FormData(createUserForm);
+    const formData = Object.fromEntries(formDataObject.entries());
+    const dataPost: any = {
+      username: formData.username,
+      full_name: formData.full_name,
+      password: formData.password,
+      lessons: formDataObject.getAll("lesson"),
+    };
+
+    if (isSubstituteCheckbox.checked) {
+      const substituteDayValue = formData["substitute-day"];
+      dataPost.is_substitute = true;
+      dataPost.substitute = substituteDayValue;
+    } else {
+      dataPost.is_substitute = false;
+    }
+
+    try {
+      await api.post("/user/create-user", JSON.stringify(dataPost), {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      createUserForm.reset();
+      alertInfo("success", "User Berhasil Di Buat");
+      isSubstituteCheckbox.checked = false;
+      substituteDayField.classList.add("hidden");
+    } catch (error) {
+      alertInfo("error", "User Telah Di Buat");
+    } finally {
+      mainElm.classList.remove("is-loading");
+    }
+  });
+</script>

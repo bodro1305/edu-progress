@@ -1,0 +1,59 @@
+---
+interface Props {
+  withLinkCreate?: boolean;
+}
+
+const { withLinkCreate } = Astro.props;
+---
+
+<div class="px-8 py-4 bg-white rounded-lg shadow-md dark:bg-gray-800">
+  <div class="flex items-center justify-between">
+    <span class="text-sm font-light text-gray-600 dark:text-gray-400"></span>
+  </div>
+
+  <div class="mt-2">
+    <p
+      class="text-xl font-bold text-gray-700 dark:text-white hover:text-gray-600 dark:hover:text-gray-200 hover:underline"
+    >
+      Tidak Ada Journal.
+    </p>
+    <p class="mt-2 text-gray-600 dark:text-gray-300">
+      Tidak Ada Satupun Journal Yang Tersedia.
+    </p>
+  </div>
+
+  <div class="flex items-center justify-between mt-4">
+    {
+      withLinkCreate ? (
+        <a
+          href="/dashboard/journal/new"
+          class="text-blue-600 flex items-center dark:text-blue-400 hover:underline"
+          tabindex="0"
+          role="link"
+        >
+          Buat Journal -->
+        </a>
+      ) : (
+        <p> </p>
+      )
+    }
+  </div>
+</div>
+
+<script>
+  const dateElement = document.querySelector(
+    ".text-sm.font-light.text-gray-600.dark\\:text-gray-400",
+  );
+
+  const formatDate = (date: string) =>
+    new Date(date).toLocaleString("id-ID", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+  const today = new Date();
+  if (dateElement) dateElement.textContent = formatDate(today.toString());
+</script>

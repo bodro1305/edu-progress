@@ -1,0 +1,31 @@
+@tailwind base
+@tailwind components
+@tailwind utilities
+
+@import url("./font.sass")
+
+:root
+  --color-primary-50: 243 247 245
+  --color-primary-100: 230 239 235
+  --color-primary-200: 193 216 204
+  --color-primary-300: 156 192 173
+  --color-primary-400: 81 144 112
+  --color-primary-500: 7 97 50
+  --color-primary-600: 6 87 45
+  --color-primary-700: 4 58 30
+  --color-primary-800: 3 44 23
+  --color-primary-900: 2 29 15
+
+html, body
+  touch-action: none
+
+*
+  scrollbar-width: thin
+
+@layer utilities
+  .no-scrollbar::-webkit-scrollbar
+    display: none
+
+  .no-scrollbar
+    -ms-overflow-style: none
+    scrollbar-width: none

@@ -1,0 +1,41 @@
+{
+  "name": "fe",
+  "type": "module",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro check && astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/alpinejs": "^0.4.0",
+    "@astrojs/check": "^0.9.3",
+    "@astrojs/node": "^8.3.3",
+    "@astrojs/tailwind": "^5.1.0",
+    "@iconify-json/tabler": "^1.1.120",
+    "@tailwindcss/forms": "^0.5.7",
+    "@types/alpinejs": "^3.13.10",
+    "@types/react": "^18.3.4",
+    "@types/react-dom": "^18.3.0",
+    "alpinejs": "^3.14.1",
+    "astro": "^4.14.2",
+    "astro-icon": "^1.1.1",
+    "axios": "^1.7.7",
+    "daisyui": "^4.12.10",
+    "micromatch": "^4.0.8",
+    "sass": "^1.77.8",
+    "tailwindcss": "^3.4.10",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "1.8.3",
+    "@faker-js/faker": "^8.4.1",
+    "add": "^2.0.6",
+    "pnpm": "^9.12.2",
+    "prettier-plugin-astro": "^0.14.1",
+    "prettier-plugin-tailwindcss": "^0.6.8",
+    "typescript": "^5.5.4"
+  }
+}

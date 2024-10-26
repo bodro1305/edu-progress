@@ -1,0 +1,296 @@
+---
+import ScrollArea from "@/component/scroll-area.astro";
+import type { IBreadcrumbs } from "@/component/ui/breadcrumb.astro";
+import Button from "@/component/ui/button.astro";
+import Checkbox from "@/component/ui/checkbox.astro";
+import Input from "@/component/ui/input.astro";
+import Select from "@/component/ui/select.astro";
+import { DAY_LIST } from "@/constant/day-list";
+import { LESSON_LIST } from "@/constant/lesson-list";
+import AdminLayout from "@/layouts/admin-layout.astro";
+import api from "@/lib/api.lib";
+
+const { public_id } = Astro.params;
+
+const breadcrumbs: IBreadcrumbs[] = [
+  {
+    href: "/admin/user",
+    label: "User",
+  },
+  {
+    href: "/admin/user/" + public_id,
+    label: public_id,
+  },
+];
+
+const getUser = async () => {
+  try {
+    const { data } = await api(
+      {
+        url: `/user/${public_id}`,
+      },
+      { accessToken: Astro.locals.accessToken },
+    );
+    return data?.data?.user;
+  } catch (error) {
+    return null;
+  }
+};
+
+const user = await getUser();
+---
+
+<AdminLayout title="New User" breadcrumbs={breadcrumbs} pageTitle="Update User">
+  <div
+    class="toast toast-center toast-top lg:toast-end lg:toast-bottom"
+    id="toast-container"
+  >
+  </div>
+  <div class="h-full rounded w-full bg-white">
+    <ScrollArea withScrollbar={false}>
+      {
+        user ? (
+          <div class="p-4">
+            <form class="">
+              <section class="grid lg:grid-cols-[1fr,1fr] gap-2">
+                <div class="mb-2">
+                  <Input name="username" id="username" withLabel="Username" />
+                </div>
+
+                <div class="mb-2">
+                  <Input
+                    name="full_name"
+                    id="full_name"
+                    withLabel="Full Name"
+                  />
+                </div>
+
+                <div class="mb-2 w-full lg:col-span-2">
+                  <Input
+                    name="password"
+                    id="password"
+                    type="password"
+                    withLabel="Password"
+                  />
+                </div>
+              </section>
+
+              <section class="">
+                <label
+                  for="full_name"
+                  class="text-sm lg:text-lg mb-2 font-bold"
+                >
+                  Mata Pelajaran
+                </label>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
+                  {LESSON_LIST.map((list) => (
+                    <Checkbox
+                      name="lesson"
+                      text={list.label}
+                      id={list.id}
+                      value={list.value.toString().trim()}
+                    />
+                  ))}
+                </div>
+
+                <div class="mt-4">
+                  <h1>Extra</h1>
+                  <Checkbox
+                    id="is-substitute"
+                    name="is-substitute"
+                    value={"is-substitutes"}
+                    text="Apakah ini adalah Guru Piket?"
+                  />
+                  <Select id="substitute-day" options={DAY_LIST} />
+                </div>
+              </section>
+
+              <section class="mt-2">
+                <Button colors="green" type="submit">
+                  Submit
+                </Button>
+              </section>
+            </form>
+          </div>
+        ) : (
+          <div class="w-full h-full grid place-items-center">
+            <h1 class="font-bold text-2xl">User Tidak Ditemukan</h1>
+          </div>
+        )
+      }
+    </ScrollArea>
+  </div>
+</AdminLayout>
+
+<script type="module" define:vars={{ user, public_id }}>
+  import api from "/src/assets/js/api";
+
+  const alertInfo = (type, text) => {
+    const rootToastElm = document.querySelector("#toast-container");
+    rootToastElm.innerHTML = `
+    <div class="${type == "error" ? "error" : "success"}">
+        <span>${text}</span>
+      </div>
+    `;
+
+    setTimeout(() => {
+      rootToastElm.innerHTML = "";
+    }, 2000);
+  };
+
+  const main = () => {
+    const selectElement = (selector, parent = document) =>
+      parent.querySelector(selector);
+    const selectAllElements = (selector, parent = document) =>
+      Array.from(parent.querySelectorAll(selector));
+
+    const updateUserForm = selectElement("form");
+    const usernameInput = selectElement("input[name=username]", updateUserForm);
+    const fullNameInput = selectElement(
+      "input[name=full_name]",
+      updateUserForm,
+    );
+    const lessonInputs = selectAllElements(
+      "input[name=lesson]",
+      updateUserForm,
+    );
+    const isSubstituteCheckbox = selectElement(
+      "#is-substitute",
+      updateUserForm,
+    );
+    const substituteDayField = selectElement("#substitute-day", updateUserForm);
+    const submitBtn = selectElement("button[type=submit]", updateUserForm);
+
+    const validationRules = {
+      username: (value) => value.length >= 3,
+      full_name: (value) => value.trim().length >= 3,
+      lessons: (inputs) => inputs.some((input) => input.checked),
+      substitute_day: (value, isSubstituteChecked) =>
+        !isSubstituteChecked || value.trim() !== "",
+    };
+
+    const isFormChanged = () => {
+      const userLessons = new Set(user.lessons.map((lesson) => lesson.name));
+      const isLessonsChanged = lessonInputs.some(
+        (input) => userLessons.has(input.value) !== input.checked,
+      );
+
+      return (
+        usernameInput.value !== user.username ||
+        fullNameInput.value !== user.full_name ||
+        isSubstituteCheckbox.checked !== user.substitute.length > 0 ||
+        (user.substitute.length > 0 &&
+          substituteDayField.value !== user.substitute[0].day) ||
+        isLessonsChanged
+      );
+    };
+
+    const validateForm = () => {
+      const isFormValid =
+        validationRules.username(usernameInput.value) &&
+        validationRules.full_name(fullNameInput.value) &&
+        validationRules.lessons(lessonInputs) &&
+        validationRules.substitute_day(
+          substituteDayField.value,
+          isSubstituteCheckbox.checked,
+        );
+
+      submitBtn.disabled = !isFormValid || !isFormChanged();
+    };
+
+    const toggleSubstituteDayField = () => {
+      substituteDayField.classList.toggle(
+        "hidden",
+        !isSubstituteCheckbox.checked,
+      );
+      validateForm();
+    };
+
+    const setInitialValues = (user) => {
+      usernameInput.value = user.username;
+      fullNameInput.value = user.full_name;
+      isSubstituteCheckbox.checked = user.substitute.length > 0;
+
+      if (user.substitute.length > 0) {
+        substituteDayField.value = user.substitute[0].day;
+      }
+
+      const userLessons = new Set(user.lessons.map((lesson) => lesson.name));
+      lessonInputs.forEach((input) => {
+        input.checked = userLessons.has(input.value);
+      });
+
+      validateForm();
+    };
+
+    const getFormChanges = () => {
+      const changes = {};
+
+      if (usernameInput.value !== user.username) {
+        changes.username = usernameInput.value;
+      }
+
+      if (fullNameInput.value !== user.full_name) {
+        changes.full_name = fullNameInput.value;
+      }
+
+      const selectedLessons = lessonInputs
+        .filter((input) => input.checked)
+        .map((input) => input.value);
+      const userLessons = new Set(user.lessons.map((lesson) => lesson.name));
+
+      if (
+        selectedLessons.length !== user.lessons.length ||
+        selectedLessons.some((lesson) => !userLessons.has(lesson))
+      ) {
+        changes.lessons = selectedLessons;
+      }
+
+      if (isSubstituteCheckbox.checked !== user.substitute.length > 0) {
+        changes.is_substitute = isSubstituteCheckbox.checked;
+      }
+
+      if (
+        isSubstituteCheckbox.checked &&
+        substituteDayField.value !== user.substitute[0]?.day
+      ) {
+        changes.substitute = substituteDayField.value;
+        changes.is_substitute = isSubstituteCheckbox.checked;
+      }
+
+      return changes;
+    };
+
+    updateUserForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      document.querySelector("main").classList.add("is-loading");
+      const changes = getFormChanges();
+      console.log("Changes to submit:", changes);
+
+      try {
+        await api.patch("/user/update-user", {
+          data: changes,
+          public_id,
+        });
+        alertInfo("success", "User Berhasil Di Update");
+      } catch (error) {
+        console.log(error);
+      } finally {
+        document.querySelector("main").classList.remove("is-loading");
+      }
+    });
+
+    usernameInput.addEventListener("input", validateForm);
+    fullNameInput.addEventListener("input", validateForm);
+    lessonInputs.forEach((input) =>
+      input.addEventListener("change", validateForm),
+    );
+    substituteDayField.addEventListener("input", validateForm);
+    isSubstituteCheckbox.addEventListener("change", toggleSubstituteDayField);
+
+    setInitialValues(user);
+    toggleSubstituteDayField();
+  };
+
+  if (user) main();
+</script>

@@ -1,0 +1,31 @@
+---
+import { Icon } from "astro-icon/components";
+import type { HTMLAttributes } from "astro/types";
+
+interface Props extends HTMLAttributes<"input"> {
+  withLabel?: string;
+  id: string;
+  withIcon: string;
+}
+const { withLabel, withIcon, id, class: HtmlClass, ...props } = Astro.props;
+
+const handleLabelClass = withLabel
+  ? "block text-xs font-medium text-gray-700"
+  : "sr-only";
+---
+
+<div class="relative">
+  <label for={id} class={handleLabelClass}> Search </label>
+
+  <input
+    id={id}
+    class={`w-full rounded-md border-gray-200 py-2.5 pe-10 shadow-sm sm:text-sm ${HtmlClass}`}
+    {...props}
+  />
+
+  <span class="absolute inset-y-0 end-0 grid w-10 place-content-center">
+    <button type="button" class="text-gray-600 hover:text-gray-700">
+      <Icon name={withIcon} />
+    </button>
+  </span>
+</div>

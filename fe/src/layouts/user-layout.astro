@@ -1,0 +1,237 @@
+---
+import Breadcrumb, { type IBreadcrumbs } from "@/component/ui/breadcrumb.astro";
+import BaseLayout from "./base-layout.astro";
+import { Icon } from "astro-icon/components";
+
+export const userNavbarLinks = [
+  {
+    href: "/dashboard/home",
+    label: "Home",
+    icon: "home",
+  },
+  {
+    href: "/dashboard/journal",
+    label: "Journal",
+    icon: "tabler:notebook",
+  },
+];
+
+interface Props {
+  title: string;
+  breadcrumbs: IBreadcrumbs[];
+  withScrollBar?: boolean;
+  pageTitle: string;
+}
+
+const links = userNavbarLinks;
+
+const isActive = (href: string) =>
+  href.split("/")[2] === Astro.url.pathname.split("/")[2];
+
+  const { user } = Astro.locals;
+
+if (user.is_substitute) {
+  userNavbarLinks[2] = {
+    href: "/dashboard/substitute",
+    label: "Substitute",
+    icon: "tabler:users",
+  };
+} else {
+  delete userNavbarLinks[2];
+}
+
+const { title, breadcrumbs, pageTitle, withScrollBar = true } = Astro.props;
+---
+
+<style lang="scss">
+  .sidebar-full-height {
+    --H: calc(var(--vh, 1vh) * 100);
+    height: calc(var(--H) - 5rem);
+  }
+</style>
+
+<BaseLayout title={title + " - Dashboard | EduProgress"}>
+  <header class="h-20 fixed w-full">
+    <nav
+      class="relative h-full grid content-center bg-white shadow dark:bg-gray-800 overflow-hidden"
+    >
+      <div class="container px-6 py-4 mx-auto lg:py-0">
+        <div class="lg:flex lg:items-center lg:justify-between">
+          <div class="flex items-center justify-between">
+            <a href="#" class="flex items-center gap-1">
+              <img class="w-auto h-8" src="/logo.png" alt="" />
+              <span class="font-bold">EduProgress</span>
+            </a>
+
+            <!-- Mobile menu button -->
+            <div class="flex lg:hidden">
+              <button
+                x-cloak
+                @click="isNavbarOpen = !isNavbarOpen"
+                type="button"
+                class="text-gray-500 dark:text-gray-200 hover:text-gray-600 dark:hover:text-gray-400 focus:outline-none focus:text-gray-600 dark:focus:text-gray-400"
+                aria-label="toggle menu"
+              >
+                <svg
+                  x-show="!isNavbarOpen"
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="w-6 h-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M4 8h16M4 16h16"></path>
+                </svg>
+
+                <svg
+                  x-show="isNavbarOpen"
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="w-6 h-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Mobile Menu open: "block", Menu closed: "hidden" -->
+          <div
+            x-cloak
+            :class="[isNavbarOpen ? 'translate-x-0 opacity-100 ' : 'opacity-0 -translate-x-full']"
+            class="sidebar-full-height fixed grid grid-rows-[1fr,auto] justify-between inset-x-0 z-50 w-64 top-20 transition-all duration-300 ease-in-out bg-white dark:bg-gray-800 lg:mt-0 lg:p-0 lg:top-0 lg:relative lg:bg-transparent lg:w-auto lg:opacity-100 lg:translate-x-0 lg:flex lg:items-center"
+          >
+            <div class="hidden lg:flex flex-col md:flex-row md:mx-6">
+              {
+                links.map((link) => (
+                  <a
+                    class="my-2 p-2 rounded-md text-gray-700  transition-colors duration-300 transform dark:text-gray-200 hover:text-green-500 dark:hover:text-green-400 md:mx-4 md:my-0"
+                    href={link.href}
+                    class:list={isActive(link.href) ? "bg-slate-200" : ""}
+                  >
+                    {link.label}
+                  </a>
+                ))
+              }
+            </div>
+
+            <aside
+              class="lg:hidden flex flex-col w-64 h-[calc(100dvh-5.1rem)] px-4 py-8 overflow-y-auto bg-white border-r"
+            >
+              <div class="flex flex-col items-center mt-4 -mx-2">
+                <img
+                  class="object-cover w-24 h-24 mx-2 rounded-full"
+                  src="/images/blank-profile-picture.png"
+                  alt="avatar"
+                />
+                <h4
+                  class="mx-2 mt-2 font-medium text-gray-800 dark:text-gray-200"
+                >
+                  {user.username}
+                </h4>
+                <p
+                  class="mx-2 mt-1 text-sm font-medium text-gray-600 dark:text-gray-400"
+                >
+                  {user.full_name}
+                </p>
+              </div>
+
+              <div class="flex flex-col justify-between flex-1 mt-6">
+                <nav>
+                  {
+                    links.map((link) => (
+                      <a
+                        class="flex items-center px-4 py-2 mt-5 text-gray-600 transition-colors duration-300 transform rounded-lg dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 dark:hover:text-gray-200 hover:text-gray-700"
+                        href={link.href}
+                        class:list={isActive(link.href) ? "bg-slate-100" : ""}
+                      >
+                        <Icon name={link.icon} />
+
+                        <span class="mx-4 font-medium">{link.label}</span>
+                      </a>
+                    ))
+                  }
+                </nav>
+              </div>
+              <div class="flex flex-col flex-1 mt-6 justify-end">
+                <nav>
+                  <button
+                    type="button"
+                    id="btn-logout"
+                    class="bg-red-400 w-full flex items-center px-4 py-2 mt-5 text-white transition-colors duration-300 transform rounded-lg dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-800 dark:hover:text-red-200 hover:text-red-700"
+                  >
+                    <Icon name="tabler:logout" />
+
+                    <span class="mx-4 font-medium">Logout</span>
+                  </button>
+                </nav>
+              </div>
+            </aside>
+          </div>
+        </div>
+      </div>
+    </nav>
+    <div
+      @click="isNavbarOpen = !isNavbarOpen"
+      x-cloak
+      :class="[isNavbarOpen ? 'translate-x-0 opacity-100 ' : 'opacity-0 translate-x-full']"
+      class="bg-black/20 w-full sidebar-full-height top-20 left-0 fixed transition-all duration-300 ease-in-out lg:hidden"
+    >
+    </div>
+  </header>
+  <main class="pt-20 overflow-hidden height-screen flex flex-col">
+    <div
+      class="toast toast-center toast-top lg:toast-end lg:toast-bottom"
+      id="toast-container"
+    >
+    </div>
+    <div class="loading-overlay">
+      <div class="spinner-wrapper">
+        <div class="spinner"></div>
+        <span>Loading...</span>
+      </div>
+    </div>
+    <div class="p-2">
+      <h1 class="text-2xl font-bold text-gray-900 sm:text-3xl px-6">
+        {pageTitle}
+      </h1>
+
+      <div class="ml-10"><Breadcrumb data={breadcrumbs} /></div>
+    </div>
+    <section
+      class={`grow overflow-scroll px-6 py-2 ${withScrollBar ? "" : "no-scrollbar"}`}
+    >
+      <slot />
+    </section>
+  </main>
+</BaseLayout>
+
+<script>
+  import api from "@/assets/js/api";
+  import { hideLoading, showLoading } from "@/assets/js/loading";
+
+  const logout = document.querySelector("#btn-logout");
+
+  logout.addEventListener("click", async () => {
+    showLoading();
+    try {
+      await api.delete("/logout");
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
+    } catch (error) {
+    } finally {
+      hideLoading();
+    }
+  });
+</script>

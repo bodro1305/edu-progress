@@ -1,0 +1,127 @@
+---
+import type { IBreadcrumbs } from "@/component/ui/breadcrumb.astro";
+import { LESSON_LIST } from "@/constant/lesson-list";
+import UserLayout from "@/layouts/user-layout.astro";
+import api from "@/lib/api.lib";
+import { formatDate } from "@/utils";
+import JournalCardEmpty from "@/component/journal/journal-card-empty.astro";
+
+const breadcrumbs: IBreadcrumbs[] = [
+  {
+    href: "/dashboard/journal",
+    label: "Journal",
+  },
+];
+
+const { user, accessToken } = Astro.locals;
+
+const getJournals = async () => {
+  const lessonPublicIds = new URLSearchParams(
+    user.lessons.flatMap((lesson) => [
+      ["lessonPublicIds", lesson.lesson_public_id],
+    ]),
+  ).toString();
+
+  try {
+    const { data } = await api(
+      {
+        url: `/journal/byLessonPublicId?${lessonPublicIds}`,
+      },
+      { accessToken: accessToken },
+    );
+    const journals = data.data.journals;
+
+    return journals.map((journal) => ({
+      ...journal,
+      created_at: formatDate(journal.createdAt),
+      lesson: LESSON_LIST.find((lesson) => lesson.value === journal.lesson.name)
+        ? {
+            ...journal.lesson,
+            label: LESSON_LIST.find(
+              (lesson) => lesson.value === journal.lesson.name,
+            ).label,
+          }
+        : null,
+    }));
+  } catch (error) {
+    console.log(error.response?.data);
+    return [];
+  }
+};
+
+const journals = await getJournals();
+---
+
+<UserLayout
+  title="Journal"
+  breadcrumbs={breadcrumbs}
+  withScrollBar={false}
+  pageTitle="Journal"
+>
+  <div class="h-full">
+    <section class="h-12 z-10 w-[calc(100%-3rem)]">
+      <a
+        class="px-6 py-2 font-medium tracking-wide text-white capitalize transition-colors duration-300 transform bg-green-600 rounded-lg hover:bg-green-500 focus:outline-none focus:ring focus:ring-green-300 focus:ring-opacity-80"
+        href="/dashboard/journal/new"
+      >
+        New Journal
+      </a>
+    </section>
+    <section class="h-[calc(100%-3rem)] flex">
+      <div class="overflow-y-scroll grow rounded-lg no-scrollbar">
+        <article class="grid grid-cols-1 gap-3">
+          {
+            journals.length === 0 ? (
+              <JournalCardEmpty withLinkCreate={true} />
+            ) : (
+              journals.map((journal) => (
+                <div class="px-8 py-4 bg-white rounded-lg shadow-md dark:bg-gray-800 w-full">
+                  <div class="flex items-center justify-between">
+                    <span class="text-sm font-normal text-gray-600 dark:text-gray-400">
+                      {journal.created_at}
+                    </span>
+                  </div>
+
+                  <div class="mt-2">
+                    <a
+                      href="#"
+                      class="text-xl font-bold text-gray-700 dark:text-white hover:text-gray-600 dark:hover:text-gray-200 hover:underline"
+                      tabindex="0"
+                      role="link"
+                    >
+                      {journal.lesson.label}
+                    </a>
+                    <p class="mt-2 text-gray-600 dark:text-gray-300 w-full text-ellipsis overflow-hidden">
+                      {journal.summary}
+                    </p>
+                  </div>
+
+                  <div class="flex items-center justify-between mt-4">
+                    <a
+                      href={`/dashboard/journal/${journal.public_id}`}
+                      class="text-blue-600 flex items-center dark:text-blue-400 hover:underline"
+                      tabindex="0"
+                      role="link"
+                    >
+                      Check -->
+                    </a>
+
+                    <div class="flex items-center">
+                      <a
+                        class="font-bold text-gray-700 cursor-pointer dark:text-gray-200"
+                        tabindex="0"
+                        role="link"
+                      >
+                        {journal.filled_by_user.full_name}
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )
+          }
+        </article>
+      </div>
+    </section>
+  </div>
+</UserLayout>

@@ -1,0 +1,226 @@
+---
+import type { IBreadcrumbs } from "@/component/ui/breadcrumb.astro";
+import Button from "@/component/ui/button.astro";
+import Checkbox from "@/component/ui/checkbox.astro";
+import Select from "@/component/ui/select.astro";
+import Textarea from "@/component/ui/textarea.astro";
+import { CLASS_SUBJECT_LIST } from "@/constant/class-subject-list";
+import { LESSON_LIST } from "@/constant/lesson-list";
+import { teachingTimeList } from "@/constant/teaching-time-list";
+import UserLayout from "@/layouts/user-layout.astro";
+
+const breadcrumbs: IBreadcrumbs[] = [
+  {
+    href: "/dashboard/journal",
+    label: "Journal",
+  },
+  {
+    href: "/dashboard/journal/new",
+    label: "New",
+  },
+];
+
+const { user } = Astro.locals;
+
+const lessonList = user.lessons.reduce((acc, lesson) => {
+  const matchingLesson = LESSON_LIST.find((l) => l.value === lesson.name);
+  if (matchingLesson) {
+    acc.push({
+      text: matchingLesson.label,
+      value: lesson.lesson_public_id,
+    });
+  }
+  return acc;
+}, []);
+---
+
+<UserLayout
+  title="New Journal"
+  breadcrumbs={breadcrumbs}
+  pageTitle="New Journal"
+>
+  <div class="bg-white p-2 rounded-lg h-full flex">
+    <article class="grow overflow-scroll no-scrollbar">
+      <section class="p-2">
+        <form
+          class="w-full grid lg:grid-cols-[1fr,1fr] gap-4"
+          id="create-journal-form"
+        >
+          <section class="">
+            <div class="mb-2 lg:hidden">
+              <Select
+                id="class_subject"
+                withLabel="Kelas"
+                options={CLASS_SUBJECT_LIST}
+              />
+            </div>
+            <div class="mb-2">
+              <Select
+                id="lesson"
+                withLabel="Mata Pelajaran"
+                options={lessonList}
+              />
+            </div>
+            <div class="mb-2 grid grid-cols-2 items-center rounded-lg">
+              <section class="">
+                <h1 class="text-sm lg:text-lg mb-2 font-bold">Jam Pelajaran</h1>
+                {
+                  teachingTimeList
+                    .slice(0, 6)
+                    .map((list) => (
+                      <Checkbox
+                        name="teaching_time"
+                        text={list.text}
+                        id={list.id}
+                        value={list.value.toString()}
+                      />
+                    ))
+                }
+              </section>
+              <section>
+                {
+                  teachingTimeList
+                    .slice(6)
+                    .map((list) => (
+                      <Checkbox
+                        name="teaching_time"
+                        text={list.text}
+                        id={list.id}
+                        value={list.value.toString()}
+                      />
+                    ))
+                }
+              </section>
+            </div>
+          </section>
+          <section class="">
+            <div class="mb-2 hidden lg:block">
+              <Select
+                id="class_subject"
+                withLabel="Kelas"
+                options={CLASS_SUBJECT_LIST}
+              />
+            </div>
+            <div class="">
+              <Textarea
+                rows="10"
+                id="summary"
+                name="summary"
+                form="create-journal-form"
+                withTitle="Ringkasan"
+                placeholder="Summary or Detail..."
+              />
+            </div>
+          </section>
+          <section>
+            <Button colors="green" type="submit" class="w-full">Submit</Button>
+          </section>
+        </form>
+      </section>
+    </article>
+  </div>
+</UserLayout>
+
+<script>
+  import api from "@/assets/js/api";
+
+  const alertInfo = (type, text) => {
+    const rootToastElm = document.querySelector("#toast-container");
+    rootToastElm.innerHTML = `
+    <div class="${type == "error" ? "error" : "success"}">
+      <span>${text}</span>
+    </div>
+  `;
+
+    setTimeout(() => {
+      rootToastElm.innerHTML = "";
+    }, 2000);
+  };
+
+  const selectElement = (selector, parent = document) =>
+    parent.querySelector(selector);
+  const selectAllElements = (selector, parent = document) =>
+    Array.from(parent.querySelectorAll(selector));
+
+  const mainElm = selectElement("main");
+
+  const createJournalForm = selectElement("form");
+  const lessonInput = selectElement("select#lesson", createJournalForm);
+  const classSubjectInputs = selectAllElements(
+    "select#class_subject",
+    createJournalForm,
+  );
+  const teachingTimeInputs = selectAllElements(
+    "input[name=teaching_time]",
+    createJournalForm,
+  );
+  const summaryInput = selectElement(
+    "textarea[name=summary]",
+    createJournalForm,
+  );
+  const submitBtn = selectElement("button[type=submit]", createJournalForm);
+
+  const syncClassSubjectInputs = (value) => {
+    classSubjectInputs.forEach((input) => {
+      input.value = value;
+    });
+  };
+
+  classSubjectInputs.forEach((input) => {
+    input.addEventListener("change", (event) => {
+      const newValue = event.target.value;
+      syncClassSubjectInputs(newValue);
+    });
+  });
+
+  const validationRules = {
+    lesson: (value) => value.trim() !== "",
+    class_subject: (inputs) =>
+      inputs.some((input) => input.value.trim() !== ""),
+    summary: (value) => value.trim().length >= 10,
+    teaching_time: (inputs) => inputs.some((input) => input.checked),
+  };
+
+  const validateForm = () => {
+    const isFormValid =
+      validationRules.lesson(lessonInput.value) &&
+      validationRules.class_subject(classSubjectInputs) &&
+      validationRules.summary(summaryInput.value) &&
+      validationRules.teaching_time(teachingTimeInputs);
+
+    submitBtn.disabled = !isFormValid;
+  };
+
+  lessonInput.addEventListener("input", validateForm);
+  summaryInput.addEventListener("input", validateForm);
+  teachingTimeInputs.forEach((input) =>
+    input.addEventListener("change", validateForm),
+  );
+  classSubjectInputs.forEach((input) =>
+    input.addEventListener("change", validateForm),
+  );
+
+  createJournalForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    mainElm.classList.add("is-loading");
+    const formDataObject = new FormData(createJournalForm);
+    const formData = Object.fromEntries(formDataObject.entries());
+    const dataPost: any = {
+      lesson_public_id: formData.lesson,
+      class_subject: formData.class_subject,
+      summary: formData.summary,
+      teaching_time: formDataObject.getAll("teaching_time"),
+      is_substitute: false,
+    };
+
+    try {
+      await api.post("/journal/create-journal", dataPost);
+      createJournalForm.reset();
+      alertInfo("success", "Journal Berhasil Di Buat");
+    } catch (error) {
+      alertInfo("error", "Journal Gagal Di Buat");
+    } finally {
+      mainElm.classList.remove("is-loading");
+    }
+  });
+</script>

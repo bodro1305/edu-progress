@@ -1,0 +1,18 @@
+---
+interface Props {
+  withScrollbar: boolean;
+}
+
+const { withScrollbar } = Astro.props;
+---
+
+<div class="w-full h-full flex">
+  <div
+    class="grow overflow-scroll"
+    class:list={[{ "no-scrollbar": !withScrollbar }]}
+  >
+    <!-- <div class="h-auto"> -->
+    <slot />
+    <!-- </div> -->
+  </div>
+</div>

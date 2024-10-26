@@ -1,0 +1,23 @@
+body.login_loader .login_loader
+    z-index: 200
+    display: grid
+
+.login_loader
+    background: black
+    opacity: .5
+    width: 100%
+    height: 100vh
+    position: absolute
+    display: none
+    place-items: center
+
+.custom-loader 
+  width:100px
+  height:100px
+  border-radius:50%
+  // background:conic-gradient(#0000 10%,rgb(22, 163, 74))
+  animation: s3 1s infinite linear
+
+@keyframes s3 
+    to
+        transform: rotate(1turn)

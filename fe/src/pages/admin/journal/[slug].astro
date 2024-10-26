@@ -1,0 +1,75 @@
+---
+import type { IBreadcrumbs } from "@/component/ui/breadcrumb.astro";
+import { LESSON_LIST } from "@/constant/lesson-list";
+import { teachingTimeList } from "@/constant/teaching-time-list";
+import AdminLayout from "@/layouts/admin-layout.astro";
+import api from "@/lib/api.lib";
+import { formatDate } from "@/utils";
+
+const { slug } = Astro.params;
+
+const breadcrumbs: IBreadcrumbs[] = [
+  {
+    href: "/admin/journal",
+    label: "Journal",
+  },
+  {
+    href: "/admin/journals/" + slug,
+    label: slug,
+  },
+];
+
+const getJournal = async () => {
+  try {
+    const { data } = await api(
+      {
+        url: `/journal/${slug}`,
+        method: "GET",
+      },
+      { accessToken: Astro.locals.accessToken },
+    );
+    return data.data;
+  } catch (error) {
+    console.log(error.response?.data);
+    return null;
+  }
+};
+
+const journal = await getJournal();
+---
+
+<AdminLayout title={slug} breadcrumbs={breadcrumbs} pageTitle="Journal">
+  <div class="h-full bg-white p-2 rounded">
+    <section class="h-12 w-full flex justify-between">
+      <span class="font-bold">{journal.filled_by_user.full_name}</span>
+      <span>{formatDate(journal.createdAt)}</span>
+    </section>
+    <section class="h-12 w-full flex justify-between">
+      <div class="font-bold">
+        {
+          LESSON_LIST.find((lesson) => lesson.value === journal.lesson.name)
+            .label
+        }
+      </div>
+      <div>
+        {
+          journal.teaching_time
+            .slice(0, 1)
+            .concat(journal.teaching_time.slice(-1))
+            .map((time: string) => {
+              const matching = teachingTimeList.find((t) => t.value === time);
+              return matching ? matching.text : "";
+            })
+            .join(" - ")
+        }
+      </div>
+    </section>
+    <section class="h-[calc(100%-6rem)] flex bg-gray-300 p-2 rounded">
+      <div class="overflow-y-scroll grow rounded-lg">
+        <article class="grid grid-cols-1 gap-3">
+          <p class="break-all whitespace-normal">{journal.summary}</p>
+        </article>
+      </div>
+    </section>
+  </div>
+</AdminLayout>

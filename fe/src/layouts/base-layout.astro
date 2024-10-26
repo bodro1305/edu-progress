@@ -1,0 +1,109 @@
+---
+import { ViewTransitions } from "astro:transitions";
+
+interface Props {
+  title: string;
+}
+
+const XData = {
+  isNavbarOpen: false,
+};
+
+const { title } = Astro.props;
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="generator" content={Astro.generator} />
+    <style is:global>
+      @import url("../style/global.sass");
+      .height-screen {
+        min-height: 100dvh;
+        height: calc(var(--vh, 1vh) * 100);
+      }
+
+      body {
+        min-height: 100dvh;
+        height: calc(var(--vh, 1vh) * 100);
+      }
+
+      body .root-container {
+        height: calc(var(--vh, 1vh) * 100);
+        @apply bg-gray-300;
+      }
+
+      .success {
+        @apply alert alert-success;
+      }
+      .error {
+        @apply alert alert-error;
+      }
+
+      .spinner {
+        width: 88px;
+        height: 88px;
+        display: grid;
+        animation: spinner-plncf9 4s infinite;
+      }
+
+      .spinner::before,
+      .spinner::after {
+        content: "";
+        grid-area: 1/1;
+        border: 9px solid;
+        border-radius: 50%;
+        border-color: #16a34a #16a34a #0000 #0000;
+        mix-blend-mode: darken;
+        animation: spinner-plncf9 1s infinite linear;
+      }
+
+      .spinner::after {
+        border-color: #0000 #0000 #dbdcef #dbdcef;
+        animation-direction: reverse;
+      }
+
+      @keyframes spinner-plncf9 {
+        100% {
+          transform: rotate(1turn);
+        }
+      }
+
+      .spinner-wrapper {
+        width: 250px;
+        height: 300px;
+        @apply rounded bg-white flex-col items-center justify-center flex;
+
+        span {
+          @apply text-2xl font-bold p-6;
+        }
+      }
+
+      .loading-overlay {
+        @apply w-full h-full absolute z-10 hidden place-items-center top-0 left-0 bg-black/50;
+      }
+
+      main {
+        &.is-loading .loading-overlay {
+          @apply grid;
+        }
+      }
+    </style>
+    <title>{title}</title>
+  </head>
+  <body>
+    <div class="root-container" x-data={JSON.stringify(XData)}>
+      <slot />
+    </div>
+  </body>
+</html>
+
+<script>
+  function appHeight() {
+    const doc = document.documentElement;
+    doc.style.setProperty("--vh", window.innerHeight * 0.01 + "px");
+  }
+
+  appHeight();
+</script>
